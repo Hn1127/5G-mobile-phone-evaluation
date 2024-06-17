@@ -6,30 +6,29 @@ import os
 import pygal   
 
 phone=pd.read_csv('D:\spider(爬虫)\数据处理\\5G-mobile-phone-evaluation-main\data_prepare\phone_info_jd.csv')
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
 index=['相机评分','电池评分','外观评分','性能评分','价格评分','商家服务评分']
 #此处输入存放分数指标文件的目录路径
 scorepath='./score/'
 #此处输入存放雷迖图的目录路径
 chartpath='./rabar_chart/'
 
-def ID_mappping()->dict:
+def ID_mappping(keyword)->dict:
     '''
-        返回一个字典,字典的key是品牌名稱,value是属于对应品牌的所有商品的ID
+        keyword:輸入需要去重的标签，比如:品牌
+        返回一个字典,字典的key是keyword,value是属于对应品牌的所有商品的ID
     '''
-    band_list=phone['品牌'].drop_duplicates().to_list()
-    empty_list=[[] for _ in band_list]
-    name_dict=dict(zip(band_list,empty_list))
-    for name in name_dict:
-        name_dict[name]=phone[phone['品牌']==name]['ID'].to_list()
-    return name_dict
+    duplicates_list=phone[keyword].drop_duplicates().to_list()
+    empty_list=[[] for _ in duplicates_list]
+    duplicates_dict=dict(zip(duplicates_list,empty_list))
+    for key in duplicates_dict:
+        duplicates_dict[key]=phone[phone[keyword]==key]['ID'].to_list()
+    return duplicates_dict
 
-def get_avg():
+def get_avg(keyword):
     '''
-        得到各个品牌的评分平均值
+        得到对应keyword的手机的评分平均值
     '''
-    band_dict=ID_mappping()
+    band_dict=ID_mappping(keyword)
     scorepath='./score/'
     index=['相机评分','电池评分','外观评分','性能评分','价格评分','商家服务评分']
     df=pd.DataFrame(index=index)
@@ -42,29 +41,26 @@ def get_avg():
                 elements=elements+np.array(element)
         df[name]=(elements/len(value)).tolist()
     return df
+
     
-def radar_chart_single(datapath): 
+def radar_chart_single(): 
     ''' 
         生成每款手机的雷迖图
     ''' 
-    ID=datapath.split('/')[-1].split('.')[0]
-    with open(datapath,'r',encoding='utf-8') as f:
-        line=f.read().split('\n')
-        phone_name=line[1].split('：')[-1]
-        line=line[3:-1]
-    data=[ float(d.split('：')[-1]) for d in line]
-    chart=pygal.Radar()
-    chart.x_labels=index
-    chart.title=phone_name
-    chart.add('score',data)
-    chart.range=[0,10]
-    chart.render_to_file(chartpath+ID+'.svg')
+    df=get_avg('品名')
+    for phone in df.columns.to_list():
+        chart=pygal.Radar()
+        chart.x_labels=index
+        chart.title=phone
+        chart.add('score',df[phone].values)
+        chart.range=[0,10]
+        chart.render_to_file(chartpath+phone.strip()+'.svg')
 
 def rabar_chart_band():
     ''' 
         生成各品牌对比的雷迖图
     '''
-    df=get_avg()
+    df=get_avg('品牌')
     chart=pygal.Radar()
     chart.x_labels=index
     chart.title='各品牌性能对比'
@@ -78,9 +74,7 @@ def rabar_chart_band():
 if __name__=='__main__':
     if not os.path.exists(chartpath):
         os.mkdir(chartpath)
-    files=os.listdir(scorepath)
-    for file in files:
-        radar_chart_single(scorepath+file)
+    radar_chart_single()
     rabar_chart_band()
 
 
