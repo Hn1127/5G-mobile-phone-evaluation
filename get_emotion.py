@@ -90,7 +90,7 @@ if __name__=="__main__":
             f.write("电池评分："+str(batteryscore)+'\n')
             f.write("外观评分：" + str(appearancescore) + '\n')
             f.write("性能评分：" + str(performancescore) + '\n')
-            f.write("价格评分：" + str(pricescore) + '\n')
+            f.write("性价比评分：" + str(pricescore) + '\n')
             f.write("商家服务评分："+str(servicescore)+'\n')
 
 '''
